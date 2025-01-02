@@ -17,6 +17,18 @@ export const fetchFiles = createAsyncThunk('filesList', async () => {
     }
 });
 
+export const fetchAdminFiles = createAsyncThunk('filesAdminList', async () => {
+    try {
+        const response = await api.get('files/list/all/');
+        // toast.success('Files fetched successfully');
+        return response.data;
+    } catch (error) {
+        const errorMsg = error.response?.data?.error || 'Failed to fetch files';
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
+    }
+});
+
 export const fetchFileDetails = createAsyncThunk(
     'files/fetchFileDetails',
     async (fileId) => {
@@ -64,16 +76,25 @@ export const downloadFile = createAsyncThunk(
             const response = await api.get(`files/download/${fileId}/`, {
                 responseType: 'blob',
             });
+            console.log(response.data);
+
             const url = window.URL.createObjectURL(new Blob([response.data]));
+            console.log(url);
+
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute(
-                'download',
-                response.headers['content-disposition'].split('filename=')[1]
-            );
+            // Extract the filename from the response headers
+            const contentDisposition = response.headers['content-disposition'];
+            console.log(contentDisposition);
+
+            const filename = contentDisposition
+                ? contentDisposition.split('filename=')[1].replace(/['"]/g, '')
+                : 'downloaded-file';
+
+            link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+            link.parentNode.removeChild(link);
             toast.success('File downloaded successfully');
             return { fileId };
         } catch (error) {
@@ -122,6 +143,7 @@ export const validateLink = createAsyncThunk(
 // Initial state
 const initialState = {
     files: [],
+    adminFiles: [],
     fileDetails: null,
     loading: false,
     error: null,
@@ -143,6 +165,17 @@ const filesSlice = createSlice({
                 state.files = action.payload;
             })
             .addCase(fetchFiles.rejected, (state) => {
+                state.loading = false;
+            })
+            .addCase(fetchAdminFiles.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchAdminFiles.fulfilled, (state, action) => {
+                state.loading = false;
+                state.adminFiles = action.payload;
+            })
+            .addCase(fetchAdminFiles.rejected, (state) => {
                 state.loading = false;
             })
             .addCase(fetchFileDetails.pending, (state) => {

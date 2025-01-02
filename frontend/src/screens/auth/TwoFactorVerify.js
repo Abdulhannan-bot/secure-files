@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { verifyOtp, sendOtp } from '../../redux/slices/authSlice'; // Assuming verifyOtp action is created in authSlice
 import { ToastContainer, toast } from 'react-toastify';
+import { verifyUser } from '../../redux/slices/authSlice';
 import {
     TextField,
     Button,
@@ -30,10 +31,19 @@ const TwoFactorVerify = () => {
 
     useEffect(() => {
         // Redirect to dashboard or home page if OTP is successfully verified
-        if (verifyData && verifyData.success) {
-            navigate('/files'); // Change this to your desired page after successful verification
+        if (verifyData && verifyData.success && !loading) {
+            dispatch(verifyUser())
+                .unwrap()
+                .then(() => {
+                    navigate(location.state?.from || '/files', {
+                        replace: true,
+                    });
+                })
+                .catch((error) => {
+                    console.error('Verification failed:', error);
+                });
         }
-    }, [verifyData, navigate]);
+    }, [verifyData, navigate, location.state, loading]);
 
     const handleChange = (e) => {
         setOtp(e.target.value);

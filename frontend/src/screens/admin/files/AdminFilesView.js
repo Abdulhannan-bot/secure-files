@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+
 import {
-    fetchFiles,
+    fetchAdminFiles,
     uploadFile,
     generateLink,
-    downloadFile,
-} from '../../redux/slices/filesSlice';
+} from '../../../redux/slices/filesSlice';
 import {
     Container,
     Table,
@@ -25,21 +25,14 @@ import {
     IconButton,
 } from '@mui/material';
 import CryptoJS from 'crypto-js';
-import { toast, ToastContainer } from 'react-toastify';
-import HeaderComponent from '../../components/header/HeaderComponent';
+import { toast } from 'react-toastify';
+// import HeaderComponent from '../../components/header/HeaderComponent';
+import HeaderComponent from '../../../components/header/HeaderComponent';
 import { Download, Share } from '@mui/icons-material'; // Add necessary icons
-import { useAuth } from '../../hooks/useAuth';
 
-export default function FilesComponent() {
+export default function AdminFilesComponent() {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const { files, loading } = useSelector((state) => state.files);
-
-    const { isAdmin } = useAuth();
-
-    if (isAdmin) {
-        navigate('/files/all');
-    }
+    const { adminFiles, loading } = useSelector((state) => state.files);
 
     const [isAddFileModalOpen, setIsAddFileModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,22 +44,13 @@ export default function FilesComponent() {
     });
 
     useEffect(() => {
-        dispatch(fetchFiles());
+        dispatch(fetchAdminFiles());
     }, [dispatch]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setFileData((prev) => ({ ...prev, file }));
-        }
-    };
-
-    const handleDownload = async (fileId) => {
-        try {
-            await dispatch(downloadFile(fileId)).unwrap();
-            // toast.success('File downloaded successfully!');
-        } catch (error) {
-            toast.error(error || 'Error downloading file');
         }
     };
 
@@ -133,7 +117,7 @@ export default function FilesComponent() {
                 await dispatch(uploadFile(formData)).unwrap();
                 setFileData({ name: '', file: null });
                 setIsAddFileModalOpen(false);
-                dispatch(fetchFiles());
+                dispatch(fetchAdminFiles());
             } catch (error) {
                 console.error('File upload failed:', error);
             }
@@ -177,7 +161,6 @@ export default function FilesComponent() {
                 </Box>
             )}
             <HeaderComponent />
-            <ToastContainer />
 
             <Box sx={{ padding: '20px' }}>
                 <Button
@@ -201,30 +184,28 @@ export default function FilesComponent() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>File Name</TableCell>
+                                <TableCell>Added By</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {files.map((file) => {
+                            {adminFiles.map((file) => {
                                 return (
                                     <TableRow key={file.id}>
                                         <TableCell>
-                                            {/* <a
-                                                href={`/files/view/${file.id}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer">
-                                                {file.name}
-                                            </a> */}
-                                            <Link to={`/files/view/${file.id}`}>
+                                            <Link
+                                                to={`/files/view/${file.id}`}
+                                                target="_blank">
                                                 {file.name}
                                             </Link>
                                         </TableCell>
                                         <TableCell>
+                                            {`${file.user.first_name} ${file.user.last_name}`}
+                                        </TableCell>
+                                        <TableCell>
                                             <IconButton
-                                                onClick={() => {
-                                                    handleDownload(file.id);
-                                                }}
-                                                variant="outlined">
+                                                variant="outlined"
+                                                href={file.download_url}>
                                                 <Download />
                                             </IconButton>
                                             <IconButton

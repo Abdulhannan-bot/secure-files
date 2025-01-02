@@ -11,12 +11,20 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
+import { verifyUser } from '../../redux/slices/authSlice';
+// import { IsAdmin } from '../../routes/protectedRoutes';
+import { useAuth } from '../../hooks/useAuth';
 
 const HeaderComponent = () => {
     const [anchorEl, setAnchorEl] = React.useState(null);
-    const { loading, error, isAuthneticated } = useSelector(
+    let { loading, error, isAdmin, isAuthenticated } = useSelector(
         (state) => state.auth
     );
+
+    useEffect(() => {
+        dispatch(verifyUser());
+    }, []);
+    // const { isAuthenticated, isAdmin } = useAuth();
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -65,9 +73,22 @@ const HeaderComponent = () => {
                         vertical: 'top', // Align the top of the menu with the anchor's bottom
                         horizontal: 'right', // Align right with the anchor
                     }}>
-                    <MenuItem onClick={() => navigate('/files')}>
-                        My Files
-                    </MenuItem>
+                    {isAdmin && (
+                        <>
+                            <MenuItem onClick={() => navigate('/files/all')}>
+                                Files
+                            </MenuItem>
+                            <MenuItem onClick={() => navigate('/users')}>
+                                Users
+                            </MenuItem>
+                        </>
+                    )}
+                    {isAuthenticated && !isAdmin && (
+                        <MenuItem onClick={() => navigate('/files')}>
+                            My Files
+                        </MenuItem>
+                    )}
+
                     <MenuItem onClick={() => navigate('/change-password')}>
                         Change Password
                     </MenuItem>

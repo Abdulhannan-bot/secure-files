@@ -2,98 +2,89 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { verifyUser } from '../redux/slices/authSlice';
 import { CircularProgress } from '@mui/material';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-export const IsAuthenticated = ({ children }) => {
-    const dispatch = useDispatch();
-    const { loading, isAuthenticated, error } = useSelector(
-        (state) => state.auth
+const LoadingSpinner = () => {
+    return (
+        <div
+            style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+            }}>
+            <CircularProgress />
+        </div>
     );
+};
 
-    console.log(children);
+export const ProtectedRoute = ({
+    children,
+    requireAuth = false,
+    requireAdmin = false,
+    requireGuest = false,
+}) => {
+    const { loading, isAuthenticated, isAdmin } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        if (isAuthenticated === null) {
-            dispatch(verifyUser());
+    // if (loading) {
+    //     return <LoadingSpinner />;
+    // }
+
+    // Handle guest routes
+    if (requireGuest) {
+        if (isAdmin) {
+            console.log('ga');
+
+            // return <Navigate to={isAdmin ? '/files/all' : '/files'} replace />;
+            // return <Navigate to={'/change-password'} replace />;
+            return navigate(location.state?.from || '/files/all', {
+                replace: true,
+            });
         }
-    }, [dispatch, isAuthenticated]);
+        if (isAuthenticated) {
+            console.log('gau');
 
-    if (loading) {
-        return (
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100vh',
-                }}>
-                <CircularProgress />
-            </div>
-        );
+            // return <Navigate to={isAdmin ? '/files/all' : '/files'} replace />;
+            return navigate(location.state?.from || '/files', {
+                replace: true,
+            });
+        }
+        return children;
     }
 
+    // Handle non-authenticated users for protected routes
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+        console.log(`!au`);
+
+        if (requireAuth || requireAdmin) {
+            console.log(`!au au a`);
+
+            return (
+                <Navigate
+                    to="/login"
+                    state={{ from: location.pathname }}
+                    replace
+                />
+            );
+        }
     }
 
-    return children;
-};
-
-export const IsAdmin = ({ children }) => {
-    const dispatch = useDispatch();
-    const { loading, isAuthenticated, isAdmin, error } = useSelector(
-        (state) => state.auth
-    );
-
-    useEffect(() => {
-        dispatch(verifyUser());
-    }, [dispatch, isAdmin, isAuthenticated]);
-
-    if (loading) {
-        return (
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100vh',
-                }}>
-                <CircularProgress />
-            </div>
-        );
-    }
-
-    if (!isAuthenticated || !isAdmin) {
-        return <Navigate to="/login" replace />;
-    }
-
-    return children;
-};
-
-export const IsGuest = ({ children }) => {
-    const dispatch = useDispatch();
-    const { loading, isAuthenticated } = useSelector((state) => state.auth);
-
-    useEffect(() => {
-        dispatch(verifyUser());
-    }, [dispatch]);
-
-    if (loading) {
-        return (
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100vh',
-                }}>
-                <CircularProgress />
-            </div>
-        );
-    }
-
+    // Handle authenticated users
     if (isAuthenticated) {
-        return <Navigate to="/files" replace />;
+        console.log(`au`);
+
+        // Block non-admin users from admin routes
+        if (requireAdmin && !isAdmin) {
+            console.log(`au aaaa`);
+
+            return <Navigate to="/files" replace />;
+        }
+        // Allow admins to access everything
+        // Allow regular users to access non-admin routes
+        return children;
     }
 
     return children;

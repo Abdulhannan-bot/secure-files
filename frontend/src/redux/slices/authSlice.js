@@ -218,6 +218,7 @@ const authSlice = createSlice({
             .addCase(verifyOtp.fulfilled, (state, action) => {
                 state.loading = false;
                 state.verifyData = action.payload;
+                state.loginData = null;
                 // toast.success('OTP verified');
             })
             .addCase(verifyOtp.rejected, (state, action) => {
@@ -242,7 +243,8 @@ const authSlice = createSlice({
             })
             .addCase(logout.fulfilled, (state) => {
                 state.loading = false;
-                state.isAuthenticated = false;
+                state.isAuthenticated = null;
+                state.isAdmin = null;
                 state.user = null;
             })
             .addCase(logout.rejected, (state, action) => {
