@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import FileSerializer
+from .serializers import FileSerializer, AdminFileSerializer
 from django.http import FileResponse, HttpResponse
 from django.core.files.base import ContentFile
 from .models import File
@@ -19,7 +19,6 @@ from Crypto.Util.Padding import unpad
 from base64 import b64decode, b64encode
 
 FILE_ENCRYPTION_KEY = settings.FILE_ENCRYPTION_KEY
-PASSWORD = "W8!tHz#5k2@3BxYq^1Fg%Lr&9Mn@ZkJ"
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -28,13 +27,14 @@ def list_files(request):
     user_files = File.objects.filter(user=user)
     
     serializer = FileSerializer(user_files, many=True)
+   
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([IsAdminUser])
 def list_all_files(request):
     all_files = File.objects.all()
-    serializer = FileSerializer(all_files, many=True)
+    serializer = AdminFileSerializer(all_files, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -72,49 +72,33 @@ def upload_file(request):
 @permission_classes([IsAuthenticated])
 def get_file_details(request, file_id):
     try:
-        file_obj = File.objects.get(id=file_id, user=request.user)
+        file_obj = File.objects.get(id=file_id)
 
-        if file_obj.user.id != request.user.id:
+        if file_obj.user.id != request.user.id and not request.user.is_staff:
             return Response({
                 "success": False,
                 "error": "You are not authorized to view this file"
             }, status=status.HTTP_403_FORBIDDEN)
+        print("entered")
         
         salt = b64decode(file_obj.salt)
         iv = b64decode(file_obj.iv)
 
-
-        password = 'W8!tHz#5k2@3BxYq^1Fg%Lr&9Mn@ZkJ'.encode()
+        PASSWORD = FILE_ENCRYPTION_KEY
+        # print(PASSWORD, FILE_ENCRYPTION_KEY)
+        password = PASSWORD.encode()
         key = hashlib.pbkdf2_hmac('sha256', password, salt, 1000, dklen=32)
 
         encrypted_content = b64decode(file_obj.file.read())
-
-
-
 
         cipher = AES.new(key, AES.MODE_CBC, iv)
         decrypted_data = unpad(cipher.decrypt(encrypted_content), AES.block_size)
 
         temp_file = ContentFile(decrypted_data)
 
-        # a = temp_file.read()
-        # print(a)
         base64_file_content = b64encode(temp_file.read()).decode('utf-8')
 
-        # response = HttpResponse(temp_file, content_type='application/octet-stream')
-
-        # # Set the filename for download
-        # response['Content-Disposition'] = f'attachment; filename="{file_obj.name}.{file_obj.extension}"'
-
-        # return response
-
-
-
-        # output_path = os.path.join('media/uploads', f'{file_obj.name}.{file_obj.extension}')
-
-        # # Save the decrypted file
-        # with open(output_path, 'wb') as f:
-        #     f.write(decrypted_data)
+        # print(base64_file_content)
 
 
         return Response({
@@ -128,64 +112,59 @@ def get_file_details(request, file_id):
 
             
     except File.DoesNotExist:
-
+     
         return Response({
             'success': False, 
             'error': 'File not found'
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-       
+        print(e)
         return Response({
             'success': False,
             'error': f'Error processing file: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def download_file(request, file_id):
-#     """File download and decryption."""
-#     try:
-#         file_instance = File.objects.get(id=file_id)
-#     except File.DoesNotExist:
-#         return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-#     # Decrypt the file content
-#     decrypted_data = decrypt(file_instance.file.path, settings.FILE_ENCRYPTION_KEY)
-    
-#     # Return the decrypted file as a response
-#     response = FileResponse(decrypted_data, content_type='application/octet-stream')
-#     response['Content-Disposition'] = f'attachment; filename="{file_instance.name}"'
-#     return response
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def download_file(request, file_id):
     try:
         file_instance = File.objects.get(id=file_id)
-        if file_instance.user != request.user:
+        if file_instance.user != request.user and not request.user.is_staff:
             return Response(
                 {'error': 'Not authorized to download this file'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        encrypted_content = file_instance.file
-        
-        try:
-            server_decrypted_data = decrypt(encrypted_content, settings.FILE_ENCRYPTION_KEY)
-        except Exception as e:
-            return Response(
-                {'error': f'Decryption failed: {str(e)}'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        response = HttpResponse(server_decrypted_data, content_type='application/octet-stream')
-        response['Content-Disposition'] = f'attachment; filename="{file_instance.name}"'
-        
-        response['X-Encryption-IV'] = file_instance.iv
-        response['X-Encryption-Key'] = file_instance.key
-        
+        encrypted_content = b64decode(file_instance.file.read())
+        iv = b64decode(file_instance.iv)
+        salt = b64decode(file_instance.salt)
+
+        PASSWORD = FILE_ENCRYPTION_KEY
+        # print(PASSWORD, FILE_ENCRYPTION_KEY)
+        password = PASSWORD.encode()
+        key = hashlib.pbkdf2_hmac('sha256', password, salt, 1000, dklen=32)
+
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        decrypted_data = unpad(cipher.decrypt(encrypted_content), AES.block_size)
+
+        temp_file = ContentFile(decrypted_data)
+
+        temp_file.seek(0)
+
+        file_extension = file_instance.extension  # Assume this stores something like '.txt', '.pdf', etc.
+        file_name_with_extension = f"{file_instance.name}.{file_extension}"
+
+        # Use Django's FileResponse to serve the file for download
+        response = FileResponse(temp_file, content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{file_name_with_extension}"'
+
+        print(response['Content-Disposition'])
+
+
+
         return response
+        
         
     except File.DoesNotExist:
         return Response(
@@ -193,6 +172,7 @@ def download_file(request, file_id):
             status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
+        print(e)
         return Response(
             {'error': f'Download failed: {str(e)}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR

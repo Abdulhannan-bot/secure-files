@@ -114,6 +114,8 @@ class SendOTPSerializer(serializers.Serializer):
         user.otp_expiration_date = expiration_time
         user.save()
 
+        print(f'otp --- {otp}')
+
         # Send OTP
         send_otp_email(user, otp)
         return user

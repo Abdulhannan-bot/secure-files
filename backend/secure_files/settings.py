@@ -34,7 +34,6 @@ FILE_ENCRYPTION_KEY=os.getenv('FILE_ENCRYPTION_KEY')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = SECRET_KEY
-FILE_ENCRYPTION_KEY = b'\x5b\x63\xcd\xfb\xa8\x98\xd7\xba\xee\x24\xb4\x80\xf7\xdf\x5b\xb3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -58,6 +57,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'auth_users',
+    'manage_users',
     'files',
 ]
 
@@ -177,8 +177,8 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
-CORS_ALLOW_HEADERS = ["Content-Type", "X-CSRFToken"]
-CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
+CORS_ALLOW_HEADERS = ["Content-Disposition","Content-Type", "X-CSRFToken"]
+CORS_EXPOSE_HEADERS = ["Content-Disposition", "Content-Type", "X-CSRFToken"]
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 
