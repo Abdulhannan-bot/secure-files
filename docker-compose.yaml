@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+    backend:
+        build:
+            context: ./backend
+            dockerfile: DockerFile
+        container_name: backend_container
+        command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        restart: always
+        ports:
+            - '8000:8000'
+        volumes:
+            - media:/media
+            - ./backend/app/media:/app/media
+        networks:
+            - docker_net
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: DockerFile
+        container_name: frontend_container
+        ports:
+            - '3000:3000'
+        volumes:
+            - ./frontend/src:/app/src
+        stdin_open: true
+        tty: true
+        depends_on:
+            - backend
+        networks:
+            - docker_net
+
+volumes:
+    data:
+    media:
+
+networks:
+    docker_net:
