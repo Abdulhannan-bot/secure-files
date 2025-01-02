@@ -7,7 +7,6 @@ A web application built using Django Rest Framework (DRF) for the backend and Re
 ## **Features**
 - Django as the backend server with REST API.
 - React as the frontend framework.
-- MySQL database integration.
 - Environment variables for secure configuration.
 - Flexible architecture for scaling and customization.
 
