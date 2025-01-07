@@ -13,12 +13,13 @@ A web application built using Django Rest Framework (DRF) for the backend and Re
 ---
 
 ## **Requirements**
-
 Ensure you have the following installed on your system:
-- Python (3.x)
-- Node.js and npm
-- MySQL
-- virtualenv
+- [Git](https://git-scm.com/downloads)
+- [Python 3.x](https://www.python.org/downloads/)
+- [Django](https://www.djangoproject.com/)
+- [Virtual environment (`venv`)](https://virtualenv.pypa.io/en/latest/)
+- [Node.js](https://nodejs.org/en/download/)
+- [npm (Node Package Manager)](https://www.npmjs.com/get-npm)
 
 ---
 
