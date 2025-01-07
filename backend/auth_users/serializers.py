@@ -70,6 +70,8 @@ class LoginSerializer(serializers.ModelSerializer):
         authenticated_user.otp_code = otp
         authenticated_user.otp_expiration_date = expiration_time
         authenticated_user.save()
+        # print(f'otp - {otp}')
+
 
         send_otp_email(authenticated_user, otp)
        

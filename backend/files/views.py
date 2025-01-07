@@ -48,14 +48,15 @@ def upload_file(request):
         iv = request.POST['iv']
         name = request.POST['name']
         extension = request.POST['extension']
+        key = request.POST['key']
 
-        print(request.user)
 
         file_instance = File.objects.create(
             file = encrypted_file,
             salt = salt,
             iv = iv,
             name = name,
+            key=key,
             extension = extension,
             user = request.user
         )
@@ -79,37 +80,20 @@ def get_file_details(request, file_id):
                 "success": False,
                 "error": "You are not authorized to view this file"
             }, status=status.HTTP_403_FORBIDDEN)
-        print("entered")
-        
-        salt = b64decode(file_obj.salt)
-        iv = b64decode(file_obj.iv)
 
-        PASSWORD = FILE_ENCRYPTION_KEY
-        # print(PASSWORD, FILE_ENCRYPTION_KEY)
-        password = PASSWORD.encode()
-        key = hashlib.pbkdf2_hmac('sha256', password, salt, 1000, dklen=32)
-
-        encrypted_content = b64decode(file_obj.file.read())
-
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        decrypted_data = unpad(cipher.decrypt(encrypted_content), AES.block_size)
-
-        temp_file = ContentFile(decrypted_data)
-
-        base64_file_content = b64encode(temp_file.read()).decode('utf-8')
-
-        # print(base64_file_content)
-
-
+        encrypted_content = file_obj.file.read()
+               
         return Response({
             'success': True,
             'data': {
-                'file_content': base64_file_content,
+                'file_content': encrypted_content,
                 'file_extension': file_obj.extension,
+                'salt': file_obj.salt,
+                'iv': file_obj.iv,
+                'name': file_obj.name,
+                'key': file_obj.key,
             }
-            
         }, status=status.HTTP_200_OK)
-
             
     except File.DoesNotExist:
      
@@ -135,12 +119,12 @@ def download_file(request, file_id):
                 {'error': 'Not authorized to download this file'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
-
+        
         encrypted_content = b64decode(file_instance.file.read())
         iv = b64decode(file_instance.iv)
         salt = b64decode(file_instance.salt)
 
-        PASSWORD = FILE_ENCRYPTION_KEY
+        PASSWORD = file_instance.key
         # print(PASSWORD, FILE_ENCRYPTION_KEY)
         password = PASSWORD.encode()
         key = hashlib.pbkdf2_hmac('sha256', password, salt, 1000, dklen=32)

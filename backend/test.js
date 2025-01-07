@@ -26,3 +26,46 @@ decryptedBytes.words.forEach((word, i) => {
 const decryptedBlob = new Blob([decryptedArray], {
     type: fileData.file.type,
 });
+
+// useEffect(() => {
+//     if (fileDetails) {
+//         try {
+//             const encryptedWordArray = CryptoJS.enc.Base64.parse(
+//                 fileDetails.fileContent
+//             );
+//             const decodedSalt = CryptoJS.enc.Base64.parse(fileDetails.salt);
+//             const decodedIV = CryptoJS.enc.Base64.parse(fileDetails.iv);
+
+//             const derivedKey = CryptoJS.PBKDF2(
+//                 fileDetails.key,
+//                 decodedSalt,
+//                 {
+//                     keySize: 256 / 32,
+//                     iterations: 1000,
+//                 }
+//             );
+
+//             const decrypted = CryptoJS.AES.decrypt(
+//                 { ciphertext: encryptedWordArray },
+//                 derivedKey,
+//                 { iv: decodedIV }
+//             );
+
+//             const decryptedBase64 = decrypted
+//                 .toString(CryptoJS.enc.Base64)
+//                 .trim();
+//             if (decryptedBase64) {
+//                 setEncryptedContent({
+//                     fileContent: decryptedBase64,
+//                     fileExtension: fileDetails.fileExtension,
+//                 });
+//             } else {
+//                 console.error(
+//                     'Decryption failed or returned empty content'
+//                 );
+//             }
+//         } catch (error) {
+//             console.error('Error during decryption:', error);
+//         }
+//     }
+// }, [fileDetails]);
