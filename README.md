@@ -52,7 +52,7 @@ Ensure you have the following installed on your system:
         ```
     - **How to generate a Gmail app password:**
         To set up a Gmail app password for secure email authentication, follow these steps:
-        1. Visit the [Google App Passwords setup page]([https://support.google.com/accounts/answer/185833?hl=en](https://www.youtube.com/watch?v=lSURGX0JHbA)).
+        1.Visit the [Google App Passwords setup page](https://support.google.com/accounts/answer/185833?hl=en).
         2. Follow the instructions to create an app password for your Gmail account.
         3. Use the generated password in place of `<gmail-app-password>` in the `.env` file.
 
