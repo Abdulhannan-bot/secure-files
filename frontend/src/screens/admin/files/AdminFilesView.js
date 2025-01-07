@@ -54,6 +54,17 @@ export default function AdminFilesComponent() {
         }
     };
 
+    const generatePassword = (length = 16) => {
+        const characters =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZbacdefghiklmnopqrstuvwxyz0123456789@#$%^&*?';
+        let password = '';
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            password += characters[randomIndex];
+        }
+        return password;
+    };
+
     const handleAddFile = async () => {
         if (!fileData.file || !fileData.name) {
             toast.error('All fields are required');
@@ -67,7 +78,7 @@ export default function AdminFilesComponent() {
         const iv = CryptoJS.lib.WordArray.random(16);
 
         // Derive the key using a password and salt
-        const password = 'W8!tHz#5k2@3BxYq^1Fg%Lr&9Mn@ZkJ';
+        const password = generatePassword();
         const key = CryptoJS.PBKDF2(password, salt, {
             keySize: 256 / 32,
             iterations: 1000,
@@ -111,6 +122,7 @@ export default function AdminFilesComponent() {
             formData.append('salt', salt.toString(CryptoJS.enc.Base64));
             formData.append('iv', iv.toString(CryptoJS.enc.Base64));
             formData.append('name', fileData.name);
+            formData.append('key', password);
 
             console.log('Sending encrypted file to backend...');
             try {

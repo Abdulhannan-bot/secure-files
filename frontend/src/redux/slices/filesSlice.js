@@ -3,16 +3,51 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { toast } from 'react-toastify';
 import decryptFile from '../../utils/decryptFile';
 import api from '../../api/apiService';
+import CryptoJS from 'crypto-js';
 
 // Async thunks
+
+const filesHelper = (fileDetails) => {
+    try {
+        const encryptedWordArray = CryptoJS.enc.Base64.parse(
+            fileDetails.file_content
+        );
+        const decodedSalt = CryptoJS.enc.Base64.parse(fileDetails.salt);
+        const decodedIV = CryptoJS.enc.Base64.parse(fileDetails.iv);
+
+        const derivedKey = CryptoJS.PBKDF2(fileDetails.key, decodedSalt, {
+            keySize: 256 / 32,
+            iterations: 1000,
+        });
+
+        const decrypted = CryptoJS.AES.decrypt(
+            { ciphertext: encryptedWordArray },
+            derivedKey,
+            { iv: decodedIV }
+        );
+
+        const decryptedBase64 = decrypted.toString(CryptoJS.enc.Base64).trim();
+        if (decryptedBase64) {
+            return {
+                fileContent: decryptedBase64,
+                fileExtension: fileDetails.file_extension,
+                name: fileDetails.name,
+                extenstion: fileDetails.extenstion,
+            };
+        } else {
+            return null;
+        }
+    } catch (error) {
+        return null;
+    }
+};
+
 export const fetchFiles = createAsyncThunk('filesList', async () => {
     try {
         const response = await api.get('files/list/');
-        // toast.success('Files fetched successfully');
         return response.data;
     } catch (error) {
         const errorMsg = error.response?.data?.error || 'Failed to fetch files';
-        toast.error(errorMsg);
         throw new Error(errorMsg);
     }
 });
@@ -24,7 +59,7 @@ export const fetchAdminFiles = createAsyncThunk('filesAdminList', async () => {
         return response.data;
     } catch (error) {
         const errorMsg = error.response?.data?.error || 'Failed to fetch files';
-        toast.error(errorMsg);
+
         throw new Error(errorMsg);
     }
 });
@@ -34,8 +69,19 @@ export const fetchFileDetails = createAsyncThunk(
     async (fileId) => {
         try {
             const response = await api.get(`files/details/${fileId}/`);
-            const { file_content, file_extension } = response.data.data;
-            return { fileContent: file_content, fileExtension: file_extension };
+            // const { file_content, file_extension } = response.data.data;
+            const { file_content, salt, iv, key, name, file_extension } =
+                response.data.data;
+
+            return filesHelper(response.data.data);
+            // return {
+            //     fileContent: file_content,
+            //     salt,
+            //     iv,
+            //     key,
+            //     fileExtension: file_extension,
+            //     name,
+            // };
         } catch (error) {
             // Handle authorization error here
             console.log(error);
@@ -45,7 +91,7 @@ export const fetchFileDetails = createAsyncThunk(
             if (error.response?.status === 403) {
                 errorMsg = 'You are not authorized to view this file';
             }
-            toast.error(errorMsg);
+            // toast.error(errorMsg);
             throw new Error(errorMsg);
         }
     }
@@ -189,12 +235,6 @@ const filesSlice = createSlice({
             })
             .addCase(fetchFileDetails.rejected, (state, action) => {
                 state.loading = false;
-                // if (
-                //     action.payload ===
-                //     'You are not authorized to view this file'
-                // ) {
-                //     state.authorizationError = action.payload;
-                // }
             })
             .addCase(uploadFile.pending, (state) => {
                 state.loading = true;

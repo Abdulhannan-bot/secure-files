@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import PDFViewer from './PDFViewer';
@@ -9,14 +9,13 @@ export default function FileViewComponent() {
     const { id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [encryptedContent, setEncryptedContent] = useState(null);
 
     console.log(id);
 
-    // Access file details and loading state from Redux
     const { fileDetails, loading } = useSelector((state) => state.files);
 
     useEffect(() => {
-        // Dispatch Redux action to fetch file details
         if (id) {
             dispatch(fetchFileDetails(id));
         }
@@ -42,107 +41,44 @@ export default function FileViewComponent() {
         );
     }
 
-    // if (authorizationError) {
-    //     return (
-    //         <Box sx={{ padding: '20px' }}>
-    //             <Typography color="error" variant="h6">
-    //                 {authorizationError}
-    //             </Typography>
-    //         </Box>
-    //     );
-    // }
-
     if (!fileDetails) {
         return (
-            <Box sx={{ padding: '20px' }}>
+            <Box
+                sx={{
+                    padding: '20px',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}>
                 <Typography color="textSecondary" variant="h6">
                     File not found.
                 </Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => navigate('/files')}>
-                    Go Back
-                </Button>
             </Box>
         );
     }
 
-    // if (fileDetails) {
-    //     console.log(fileDetails);
-    // }
-
-    const createURL = (fileContent, fileExtension) => {
-        const blob = new Blob(
-            [
-                new Uint8Array(
-                    atob(fileContent)
-                        .split('')
-                        .map((c) => c.charCodeAt(0))
-                ),
-            ],
-            {
-                type: `application/${fileExtension}`,
-            }
-        );
-        const fileUrl = URL.createObjectURL(blob);
-        return fileUrl;
-    };
-
-    const createBlob = (fileContent, fileExtension) => {
-        const byteArray = new Uint8Array(
-            atob(fileContent)
-                .split('')
-                .map((c) => c.charCodeAt(0))
-        );
-
-        // Determine MIME type based on file extension
-        let mimeType;
-        switch (fileExtension) {
-            case 'pdf':
-                mimeType = 'application/pdf';
-                break;
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-                mimeType = 'image/' + fileExtension;
-                break;
-            case 'txt':
-                mimeType = 'text/plain';
-                break;
-            case 'docx':
-                mimeType =
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-                break;
-            case 'xlsx':
-                mimeType =
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-                break;
-            default:
-                mimeType = 'application/octet-stream'; // Default binary stream
-        }
-
-        return new Blob([byteArray], { type: mimeType });
-    };
-
     const displayFileInFrame = (fileContent, fileExtension) => {
-        const blob = createBlob(fileContent, fileExtension);
-        const fileUrl = URL.createObjectURL(blob);
-
+        let fileUrl = '';
         // Display in iframe for PDFs
         if (fileExtension === 'pdf') {
-            return <PDFViewer base64Content={fileContent} />;
+            return (
+                <PDFViewer
+                    base64Content={`data:application/pdf;base64,${fileContent}`}
+                />
+            );
         }
-
         // Display in img tag for images
+
         if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
             return (
-                <img
-                    src={fileUrl}
-                    alt="File Preview"
-                    width="100%"
-                    style={{ border: 'none' }}
-                />
+                <div width="100%" height="750px" style={{ border: 'none' }}>
+                    <img
+                        src={`data:image/png;base64,${fileContent}`}
+                        alt="File Preview"
+                        width="100%"
+                        style={{ border: 'none' }}
+                        onContextMenu={(e) => e.preventDefault()}
+                    />
+                </div>
             );
         }
 
@@ -163,16 +99,17 @@ export default function FileViewComponent() {
 
     return (
         <Box sx={{ padding: '20px' }}>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" gutterBottom sx={{ textAlign: 'center' }}>
                 {fileDetails.name}
             </Typography>
-
-            <>
-                {displayFileInFrame(
-                    fileDetails.fileContent,
-                    fileDetails.fileExtension
-                )}
-            </>
+            {fileDetails && (
+                <>
+                    {displayFileInFrame(
+                        fileDetails.fileContent,
+                        fileDetails.fileExtension
+                    )}
+                </>
+            )}
         </Box>
     );
 }
