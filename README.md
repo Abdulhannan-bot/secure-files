@@ -13,12 +13,13 @@ A web application built using Django Rest Framework (DRF) for the backend and Re
 ---
 
 ## **Requirements**
-
 Ensure you have the following installed on your system:
-- Python (3.x)
-- Node.js and npm
-- MySQL
-- virtualenv
+- [Git](https://git-scm.com/downloads)
+- [Python 3.x](https://www.python.org/downloads/)
+- [Django](https://www.djangoproject.com/)
+- [Virtual environment (`venv`)](https://virtualenv.pypa.io/en/latest/)
+- [Node.js](https://nodejs.org/en/download/)
+- [npm (Node Package Manager)](https://www.npmjs.com/get-npm)
 
 ---
 
@@ -51,7 +52,7 @@ Ensure you have the following installed on your system:
         ```
     - **How to generate a Gmail app password:**
         To set up a Gmail app password for secure email authentication, follow these steps:
-        1. Visit the [Google App Passwords setup page]([https://support.google.com/accounts/answer/185833?hl=en](https://www.youtube.com/watch?v=lSURGX0JHbA)).
+        1.Visit the [Google App Passwords setup page](https://support.google.com/accounts/answer/185833?hl=en).
         2. Follow the instructions to create an app password for your Gmail account.
         3. Use the generated password in place of `<gmail-app-password>` in the `.env` file.
 
